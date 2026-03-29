@@ -59,8 +59,8 @@ namespace Lab1
             if (responseBuffer == null)
             {
                 response.StatusCode = (int)HttpStatusCode.NotFound;
-                response.Close();
                 Logger.Log(CreateLogMessage(request, response));
+                response.Close();
                 return;
             }
 

@@ -27,8 +27,9 @@ namespace Lab2
     internal class Program
     {
         private readonly static Dictionary<string, byte[]> _cache = [];
-        private static volatile int _tasksCounter = 0;
-        private static volatile bool _stop = false;
+        private readonly static List<Task> _tasks = [];
+        private static int _tasksCounter = 0;
+        private static bool _stop = false;
         private static HttpListener? listener;
 
         public static string CreateLogMessage(HttpListenerRequest request, HttpListenerResponse response)
@@ -51,7 +52,7 @@ namespace Lab2
 
         public static async Task HandleRequest(HttpListenerContext context)
         {
-            Interlocked.Increment(ref _tasksCounter);
+            _tasksCounter++;
 
             try
             {
@@ -64,9 +65,10 @@ namespace Lab2
                 if (responseBuffer == null)
                 {
                     response.StatusCode = (int)HttpStatusCode.NotFound;
-                    response.Close();
                     Logger.Log(CreateLogMessage(request, response));
-                    Interlocked.Decrement(ref _tasksCounter);
+                    response.Close();
+                    
+                    _tasksCounter--;
                     return;
                 }
 
@@ -82,7 +84,7 @@ namespace Lab2
             }
             finally
             {
-                Interlocked.Decrement(ref _tasksCounter);
+                _tasksCounter--;
             }
         }
 
@@ -109,7 +111,10 @@ namespace Lab2
                 try
                 {
                     HttpListenerContext context = await listener.GetContextAsync();
-                    _ = Task.Run(() => HandleRequest(context));
+                    Task task = HandleRequest(context);
+                    _tasks.Add(task);
+
+                    _tasks.RemoveAll(task => task.IsCompleted);
                 }
                 catch (HttpListenerException) // listener.Stop()
                 {
