@@ -1,3 +1,5 @@
+using Serilog;
+
 namespace Lab3
 {
     public class Program
@@ -5,6 +7,21 @@ namespace Lab3
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+                .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+                .WriteTo.Console()
+                .WriteTo.File(
+                    "logs/log-.txt",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{StatusCode}] {RequestPath} from {ClientIP} {NewLine}"
+                )
+                .CreateLogger();
+            builder.Host.UseSerilog();
 
             // Add services to the container.
             builder.Services.AddRazorPages(options =>
@@ -26,6 +43,14 @@ namespace Lab3
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString());
+                };
+            });
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
