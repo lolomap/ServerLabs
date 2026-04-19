@@ -1,3 +1,4 @@
+using Lab3.Pages;
 using Serilog;
 
 namespace Lab3
@@ -34,6 +35,9 @@ namespace Lab3
                 options.Conventions.AddPageRoute("/ToS", "tos.html");
             });
 
+            builder.Services.AddScoped<IMailService, MailService>();
+            builder.Services.AddScoped<ICsvService<ContactForm>, CsvService<ContactForm>>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -60,6 +64,7 @@ namespace Lab3
             app.UseAuthorization();
 
             app.MapRazorPages();
+            app.MapControllers();
 
             app.UseStatusCodePagesWithReExecute("/Error404");
 

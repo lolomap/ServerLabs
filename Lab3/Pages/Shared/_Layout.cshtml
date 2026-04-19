@@ -189,6 +189,13 @@
 
             // Basic email validation
             if (/^\S+@@\S+\.\S+$/.test(email)) {
+                fetch(`/api/subscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email })
+                });
                 showSubscribePopup();
                 document.getElementById('subscribeEmail').value = ''; // Clear input
             }
